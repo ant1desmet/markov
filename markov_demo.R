@@ -17,7 +17,7 @@ State%*%(Trns^100)
 #state probabilities forecasting
 HealthTrns <- matrix(c(0.90, 0.05, 0.05, 0.0,
                        0.00, 0.00, 0.50, 0.5,
-                       0.15, 0.25, 0.60, 0.0,
+                       0.35, 0.25, 0.4, 0.0,
                        0.00, 0.00, 0.00, 1.0),
                        nrow = 4, byrow = T,
                      dimnames = list(c("healthy", "event", "risk", "death"),
@@ -30,7 +30,7 @@ DF <- as.data.frame(cbind(1:40,t(probs)))
 names(DF) <-c("years","healthy", "event", "risk", "death")
 DF <- melt(DF, id.vars = "years")
 #ggplot(DF, aes(x=years, y=value, colour = variable))+geom_line()
-ggplot(DF, aes(x=years, y=value, fill = variable))+geom_area()
+#ggplot(DF, aes(x=years, y=value, fill = variable))+geom_area()
 
 
 
@@ -41,26 +41,29 @@ processRow <- function(patientState){
   sapply(patientState, function(x)  sample(x=c(1,2,3,4), size=1, replace=TRUE, prob= HealthTrns[x,]))
 }
 
-patientStates <- matrix(rep(1,5000))
+patientStates <- matrix(rep(1,10000))
 for(i in 1:40){patientStates <- cbind(patientStates,processRow(patientStates[,i]))}
-DF <- as.data.frame(cbind(1:41,t(patientStates)))
-names(DF) <- c('yr', paste("patient",1:5000,sep = '_'))
-ggDF <- melt(DF, id.vars = 'yr')
+#DF <- as.data.frame(cbind(1:41,t(patientStates)))
+#names(DF) <- c('yr', paste("patient",1:50000,sep = '_'))
+#ggDF <- melt(DF, id.vars = 'yr')
 #ggplot(ggDF, aes(x=yr, y=variable, fill = as.factor(value)))+geom_tile()
 
 financials <- apply(patientStates, 1:2, function(x) cf[1,x])
-rowSums(financials)
+
+rowSums(financials) #revenue from each individual
 which.max(rowSums(financials))
 which.min(rowSums(financials))
 table(patientStates[which.min(rowSums(financials)),])
+
 cumFinancials <- rowCumsums(financials)
 
-binnedCumFinancials <- round(cumFinancials/10000)*10000
-freqs <- lapply(1:40, function(x) data.frame(yrs = x, 
-                                              financial= names(table(binnedCumFinancials[,x])), 
-                                              value=unname(table(binnedCumFinancials[,x]))
-                                              )
-               )
-densityDF <- do.call(rbind, freqs)
-densityDF$financial <- as.numeric(as.character(densityDF$financial))
-ggplot(densityDF, aes(x=yrs,y=financial,fill=value.Freq))+geom_tile()
+
+DF <- as.data.frame(t(apply(cumFinancials,2,function(x) c(summary(x), sd=sd(x), IQR=IQR(x)))))
+DF$year <- 1:41
+ggplot(DF, aes(x=year,y=Median))+geom_line()+
+  geom_line(aes(y=`Mean`), colour = 'purple')+
+  geom_line(aes(y=`1st Qu.`), colour = 'red')+
+  geom_line(aes(y=`3rd Qu.`), colour = 'blue')+
+  geom_ribbon(aes(ymin=`Min.`,ymax=`Max.`), fill = 'black', alpha = 0.2)
+
+
