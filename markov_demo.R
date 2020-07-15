@@ -155,5 +155,8 @@ ggplot(DFsumsAll, aes(x=year,y=Median))+geom_line()+
 #Cost
 c(DFsums$Mean[41],DFsums2$Mean[41])
 #mortality at end of study
-matrix(c(table(patientStates[,41]),table(patientStates2[,41])),nrow =2, byrow = T)
-
+matrix(c(table(patientStates[,41]),table(patientStates2[,41])),nrow =2, byrow = T)/10000
+#test of statistical significance
+prop.test(c(sum(patientStates[,41]==4), sum(patientStates2[,41]==4)),c(10000,10000))
+#What if we only ran our experiment on 200 members, instead of 10,000
+prop.test(c(sum(patientStates[,41]==4), sum(patientStates2[,41]==4))/50 ,c(10000,10000)/50)
