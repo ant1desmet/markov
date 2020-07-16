@@ -67,14 +67,14 @@ for(i in 1:40){patientStates <- cbind(patientStates,processRow(patientStates[,i]
 #rearrange array and plot a sample of member's chonology of the disease
 DF <- as.data.frame(cbind(1:41,t(patientStates)))
 names(DF) <- c('yr', paste("patient",1:(ncol(DF)-1),sep = '_'))
-ggDF <- melt(DF[sample(1:nrow(DF), 30)], id.vars = 'yr')
+ggDF <- melt(DF[c(1,sample(2:nrow(DF), 30))], id.vars = 'yr')
 ggDF$value <- factor(ggDF$value, labels = c("healthy", "event", "risk", "death"))
 ggplot(ggDF, aes(x=yr, y=variable, fill = value))+geom_tile()+ggtitle("examples of member chronology")
 
 #replace the states by their associated costs
 financials <- apply(patientStates, 1:2, function(x) cf[1,x])
 
-rowSums(financials) #revenue from each individual
+head(rowSums(financials)) #revenue from each individual
 max(rowSums(financials))
 min(rowSums(financials))
 table(patientStates[which.min(rowSums(financials)),])
@@ -84,7 +84,7 @@ cumFinancials <- rowCumsums(financials)
 DFtraces <- data.frame(t(cumFinancials[sample(1:dim(cumFinancials)[1], 200),]))
 DFtraces$year <- 1:41
 DFtraces <- melt(DFtraces, id.vars='year')
-ggplot(DFtraces, aes(x=year,y=value,group=variable))+geom_line(alpha = 0.2,position=position_jitter(w=0, h=2000))
+ggplot(DFtraces, aes(x=year,y=value,group=variable))+geom_line(alpha = 0.2,position=position_jitter(w=0, h=1500))
 
 DFsums <- as.data.frame(t(apply(cumFinancials,2,function(x) c(summary(x), sd=sd(x), IQR=IQR(x)))))
 DFsums$year <- 1:41
@@ -98,9 +98,9 @@ ggplot(DFsums, aes(x=year,y=Median))+geom_line()+
   ylim(-75000,50000)
 
 
-#Cost
+#Expected cost/revenue
 DFsums$Mean[41]
-#mortality at end of study
+#mortality at end of study period
 length(which(patientStates[,41] == 4))
 
 #______________________________
@@ -114,7 +114,7 @@ HealthTrns2 <- matrix(c(0.90, 0.05, 0.05, 0.0,
                      dimnames = list(c("healthy", "event", "risk", "death"),
                                      c("Healthy", "Event", "Risk", "Death")))
 
-cf2 <- data.frame(Healthy=c(1000), Event=c(-10000), Risk=c(-200), Death=c(0))
+cf2 <- data.frame(Healthy=c(1000), Event=c(-10000), Risk=c(0), Death=c(0))
 
 HealthState <- c(1,0,0,0)
 probs2 <- cbind(HealthState,sapply(X = 1:40, function(x) HealthState%*%(HealthTrns2%^%x)))
